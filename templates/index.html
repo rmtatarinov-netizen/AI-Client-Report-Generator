@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Транскрибация телефонного разговора</title>
+  <style>
+    :root {
+      --bg: #eef3fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --blue-soft: #eff6ff;
+      --green: #15803d;
+      --green-soft: #f0fdf4;
+      --red: #b91c1c;
+      --red-soft: #fef2f2;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", "DejaVu Sans", Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    .shell {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 38px 0 28px;
+    }
+
+    .header {
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 18px;
+    }
+
+    .drop-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 230px;
+      padding: 28px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 16px;
+      background: #f8fafc;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .drop-zone:hover,
+    .drop-zone:focus-visible,
+    .drop-zone.dragging {
+      border-color: var(--blue);
+      background: var(--blue-soft);
+      outline: none;
+    }
+
+    .drop-zone.dragging {
+      transform: translateY(-1px);
+    }
+
+    .drop-icon {
+      display: grid;
+      place-items: center;
+      width: 62px;
+      height: 62px;
+      margin-bottom: 14px;
+      border-radius: 18px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+    }
+
+    .drop-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .drop-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .file-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .file-size {
+      flex: none;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .inline-error {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--red-soft);
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 18px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 12px;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 160ms ease, transform 160ms ease, opacity 160ms ease;
+    }
+
+    .button:active {
+      transform: translateY(1px);
+    }
+
+    .button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .button-primary {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .button-primary:hover:not(:disabled) {
+      background: var(--blue-dark);
+    }
+
+    .button-secondary {
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .button-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .status-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .spinner {
+      flex: none;
+      width: 26px;
+      height: 26px;
+      border: 3px solid #dbeafe;
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 900ms linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .status-copy {
+      min-width: 0;
+    }
+
+    .status-title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .status-message {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timer {
+      margin-left: auto;
+      flex: none;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 24px 0 6px;
+    }
+
+    .step {
+      position: relative;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--line);
+      z-index: 0;
+    }
+
+    .step-dot {
+      position: relative;
+      z-index: 1;
+      display: inline-grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      margin-bottom: 7px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 800;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px var(--line);
+    }
+
+    .step.active {
+      color: var(--blue);
+    }
+
+    .step.active .step-dot {
+      background: #dbeafe;
+      color: var(--blue);
+      box-shadow: 0 0 0 4px var(--blue-soft);
+    }
+
+    .step.done {
+      color: var(--green);
+    }
+
+    .step.done .step-dot {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 0 0 1px var(--green);
+    }
+
+    .step.done:not(:last-child)::after,
+    .step.active:not(:last-child)::after {
+      background: #bfdbfe;
+    }
+
+    .step.error {
+      color: var(--red);
+    }
+
+    .step.error .step-dot {
+      background: var(--red-soft);
+      color: var(--red);
+      box-shadow: 0 0 0 1px #fecaca;
+    }
+
+    .error-box {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .error-text {
+      margin: 0 0 14px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .result {
+      margin-top: 22px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+
+    .result-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .result-title {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .result-file {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 13px;
+      word-break: break-all;
+    }
+
+    .transcript {
+      max-height: 44vh;
+      overflow: auto;
+      margin-top: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8fafc;
+    }
+
+    .utterance {
+      margin-bottom: 16px;
+    }
+
+    .utterance:last-child {
+      margin-bottom: 0;
+    }
+
+    .speaker {
+      margin-bottom: 3px;
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .text {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .result-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .footer {
+      color: #94a3b8;
+      text-align: center;
+      font-size: 12px;
+      padding: 8px 0 18px;
+    }
+
+    @media (max-width: 620px) {
+      .shell {
+        width: min(100% - 20px, 920px);
+        padding-top: 24px;
+      }
+
+      .card {
+        padding: 18px;
+        border-radius: 16px;
+      }
+
+      .drop-zone {
+        min-height: 190px;
+        padding: 20px;
+      }
+
+      .status-head {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .timer {
+        margin-left: 40px;
+      }
+
+      .step {
+        font-size: 10px;
+      }
+
+      .step-dot {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="header">
+      <div class="eyebrow">AI Client Report Generator</div>
+      <h1>Транскрибация телефонного разговора</h1>
+      <p class="subtitle">
+        Загрузите MP3-запись. Приложение расшифрует разговор, разделит реплики
+        по говорящим и подготовит PDF.
+      </p>
+    </header>
+
+    <section class="card" id="uploadCard">
+      <form id="uploadForm" novalidate>
+        <div
+          class="drop-zone"
+          id="dropZone"
+          role="button"
+          tabindex="0"
+          aria-label="Выбрать MP3-файл"
+        >
+          <input
+            type="file"
+            id="fileInput"
+            accept=".mp3,audio/mpeg"
+            hidden
+          >
+          <div class="drop-icon">MP3</div>
+          <p class="drop-title">Перетащите файл сюда или нажмите для выбора</p>
+          <p class="drop-hint">Один MP3-файл, не больше 25 МБ</p>
+        </div>
+
+        <div class="file-row" id="fileRow" hidden>
+          <span class="file-name" id="fileName"></span>
+          <span class="file-size" id="fileSize"></span>
+        </div>
+
+        <div class="inline-error" id="uploadError" hidden></div>
+
+        <div class="actions">
+          <button
+            type="submit"
+            class="button button-primary"
+            id="submitButton"
+            disabled
+          >
+            Начать транскрибацию
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" id="statusCard" hidden>
+      <div class="status-head" aria-live="polite">
+        <div class="spinner" id="spinner" aria-hidden="true"></div>
+        <div class="status-copy">
+          <div class="status-title" id="statusTitle">Подготовка</div>
+          <div class="status-message" id="statusMessage">Отправляем файл на сервер.</div>
+        </div>
+        <div class="timer" id="timer">00:00</div>
+      </div>
+
+      <div class="steps" id="steps">
+        <div class="step" data-step="0">
+          <span class="step-dot">1</span>
+          <div>Файл</div>
+        </div>
+        <div class="step" data-step="1">
+          <span class="step-dot">2</span>
+          <div>Транскрибация</div>
+        </div>
+        <div class="step" data-step="2">
+          <span class="step-dot">3</span>
+          <div>PDF</div>
+        </div>
+        <div class="step" data-step="3">
+          <span class="step-dot">4</span>
+          <div>Готово</div>
+        </div>
+      </div>
+
+      <div class="error-box" id="errorBox" hidden>
+        <p class="error-text" id="errorText"></p>
+        <button type="button" class="button button-secondary" id="retryButton">
+          Попробовать снова
+        </button>
+      </div>
+
+      <div class="result" id="result" hidden>
+        <div class="result-head">
+          <div>
+            <div class="result-title">PDF с расшифровкой готов</div>
+            <div class="result-file" id="resultFile"></div>
+          </div>
+          <a class="button button-primary" id="downloadLink" href="#" download>
+            Скачать PDF
+          </a>
+        </div>
+
+        <div class="transcript" id="transcript"></div>
+
+        <div class="result-actions">
+          <button type="button" class="button button-secondary" id="resetButton">
+            Обработать другой файл
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Обработка выполняется через ProxyAPI. Исходный MP3 не изменяется и не удаляется.
+    </footer>
+  </main>
+
+  <script>
+    const MAX_FILE_SIZE = 25 * 1024 * 1024;
+    const POLL_INTERVAL = 1500;
+    const STAGE_INDEX = {
+      queued: 0,
+      transcribing: 1,
+      generating_pdf: 2,
+      done: 3
+    };
+    const STAGE_TITLES = {
+      queued: "Задача в очереди",
+      transcribing: "Транскрибируем разговор",
+      generating_pdf: "Формируем PDF",
+      done: "Готово"
+    };
+
+    const uploadCard = document.getElementById("uploadCard");
+    const uploadForm = document.getElementById("uploadForm");
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const fileRow = document.getElementById("fileRow");
+    const fileName = document.getElementById("fileName");
+    const fileSize = document.getElementById("fileSize");
+    const uploadError = document.getElementById("uploadError");
+    const submitButton = document.getElementById("submitButton");
+
+    const statusCard = document.getElementById("statusCard");
+    const spinner = document.getElementById("spinner");
+    const statusTitle = document.getElementById("statusTitle");
+    const statusMessage = document.getElementById("statusMessage");
+    const timer = document.getElementById("timer");
+    const steps = Array.from(document.querySelectorAll(".step"));
+    const errorBox = document.getElementById("errorBox");
+    const errorText = document.getElementById("errorText");
+    const result = document.getElementById("result");
+    const resultFile = document.getElementById("resultFile");
+    const downloadLink = document.getElementById("downloadLink");
+    const transcript = document.getElementById("transcript");
+
+    let selectedFile = null;
+    let currentStageIndex = 0;
+    let pollGeneration = 0;
+    let timerId = null;
+    let elapsedSeconds = 0;
+    let elapsedSyncedAt = 0;
+
+    function formatSize(bytes) {
+      if (bytes < 1024) {
+        return `${bytes} Б`;
+      }
+      if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} КБ`;
+      }
+      return `${(bytes / (1024 * 1024)).toFixed(2)} МБ`;
+    }
+
+    function formatTimer(seconds) {
+      const total = Math.max(0, Math.floor(seconds));
+      const hours = Math.floor(total / 3600);
+      const minutes = Math.floor((total % 3600) / 60);
+      const rest = total % 60;
+
+      if (hours) {
+        return `${hours}:${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+      }
+      return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+    }
+
+    function renderTimer() {
+      if (!elapsedSyncedAt) {
+        timer.textContent = formatTimer(elapsedSeconds);
+        return;
+      }
+      const current = elapsedSeconds + (Date.now() - elapsedSyncedAt) / 1000;
+      timer.textContent = formatTimer(current);
+    }
+
+    function startTimer() {
+      stopTimer();
+      elapsedSeconds = 0;
+      elapsedSyncedAt = Date.now();
+      renderTimer();
+      timerId = window.setInterval(renderTimer, 250);
+    }
+
+    function stopTimer() {
+      if (timerId !== null) {
+        window.clearInterval(timerId);
+        timerId = null;
+      }
+    }
+
+    function syncTimer(seconds) {
+      elapsedSeconds = Number(seconds) || 0;
+      elapsedSyncedAt = Date.now();
+      renderTimer();
+    }
+
+    function updateSteps(mode) {
+      steps.forEach((step, index) => {
+        step.classList.remove("active", "done", "error");
+
+        if (mode === "completed") {
+          step.classList.add("done");
+          return;
+        }
+
+        if (index < currentStageIndex) {
+          step.classList.add("done");
+          return;
+        }
+
+        if (index === currentStageIndex) {
+          step.classList.add(mode === "failed" ? "error" : "active");
+        }
+      });
+    }
+
+    function showUploadError(message) {
+      uploadError.textContent = message;
+      uploadError.hidden = false;
+    }
+
+    function clearUploadError() {
+      uploadError.textContent = "";
+      uploadError.hidden = true;
+    }
+
+    function handleFile(file) {
+      clearUploadError();
+
+      if (!file) {
+        selectedFile = null;
+        fileRow.hidden = true;
+        submitButton.disabled = true;
+        return;
+      }
+
+      if (!file.name.toLowerCase().endsWith(".mp3")) {
+        selectedFile = null;
+        fileRow.hidden = true;
+        submitButton.disabled = true;
+        showUploadError("Выберите файл с расширением .mp3.");
+        return;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        selectedFile = null;
+        fileRow.hidden = true;
+        submitButton.disabled = true;
+        showUploadError("Файл больше 25 МБ. Выберите запись меньшего размера.");
+        return;
+      }
+
+      selectedFile = file;
+      fileName.textContent = file.name;
+      fileSize.textContent = formatSize(file.size);
+      fileRow.hidden = false;
+      submitButton.disabled = false;
+    }
+
+    function updateStatus(task) {
+      statusCard.hidden = false;
+      uploadCard.hidden = true;
+      result.hidden = true;
+      errorBox.hidden = true;
+      spinner.hidden = false;
+
+      const stageIndex = STAGE_INDEX[task.stage];
+      if (stageIndex !== undefined) {
+        currentStageIndex = stageIndex;
+      }
+
+      statusTitle.textContent = STAGE_TITLES[task.stage] || "Обработка";
+      statusMessage.textContent = task.message || "Пожалуйста, подождите.";
+      syncTimer(task.elapsed_seconds);
+      updateSteps("processing");
+    }
+
+    function renderTranscript(data) {
+      transcript.replaceChildren();
+
+      const segments = Array.isArray(data && data.segments) ? data.segments : [];
+      if (segments.length) {
+        segments.forEach((segment) => {
+          const article = document.createElement("article");
+          article.className = "utterance";
+
+          const speaker = document.createElement("div");
+          speaker.className = "speaker";
+          speaker.textContent = segment.speaker || "Спикер";
+
+          const text = document.createElement("div");
+          text.className = "text";
+          text.textContent = segment.text || "";
+
+          article.append(speaker, text);
+          transcript.append(article);
+        });
+        return;
+      }
+
+      const text = document.createElement("div");
+      text.className = "text";
+      text.textContent = (data && data.text) || "Текст расшифровки отсутствует.";
+      transcript.append(text);
+    }
+
+    function showResult(task) {
+      stopTimer();
+      syncTimer(task.elapsed_seconds);
+      spinner.hidden = true;
+      statusCard.hidden = false;
+      uploadCard.hidden = true;
+      errorBox.hidden = true;
+      statusTitle.textContent = "Расшифровка готова";
+      statusMessage.textContent = task.message || "PDF сформирован.";
+      currentStageIndex = 3;
+      updateSteps("completed");
+
+      resultFile.textContent = task.file || "";
+      downloadLink.href = task.url || "#";
+      downloadLink.download = task.file || "transcript.pdf";
+
+      renderTranscript(task.transcript);
+      result.hidden = false;
+    }
+
+    function showError(message) {
+      stopTimer();
+      spinner.hidden = true;
+      statusCard.hidden = false;
+      uploadCard.hidden = true;
+      result.hidden = true;
+      statusTitle.textContent = "Не удалось обработать файл";
+      statusMessage.textContent = "Проверьте файл и попробуйте снова.";
+      errorText.textContent = message || "Неизвестная ошибка.";
+      errorBox.hidden = false;
+      updateSteps("failed");
+    }
+
+    function resetInterface() {
+      pollGeneration += 1;
+      stopTimer();
+      elapsedSeconds = 0;
+      elapsedSyncedAt = 0;
+      currentStageIndex = 0;
+      timer.textContent = "00:00";
+
+      selectedFile = null;
+      fileInput.value = "";
+      fileRow.hidden = true;
+      submitButton.disabled = true;
+      clearUploadError();
+
+      statusCard.hidden = true;
+      uploadCard.hidden = false;
+      result.hidden = true;
+      errorBox.hidden = true;
+      spinner.hidden = false;
+      statusTitle.textContent = "Подготовка";
+      statusMessage.textContent = "Отправляем файл на сервер.";
+      steps.forEach((step) => step.classList.remove("active", "done", "error"));
+      transcript.replaceChildren();
+      dropZone.focus();
+    }
+
+    async function readJson(response) {
+      try {
+        return await response.json();
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function describeError(error) {
+      if (error instanceof TypeError) {
+        return "Не удалось связаться с сервером. Проверьте, что сервер запущен.";
+      }
+      return error && error.message ? error.message : "Неизвестная ошибка.";
+    }
+
+    async function pollTask(statusUrl, generation) {
+      if (generation !== pollGeneration) {
+        return;
+      }
+
+      let task;
+      try {
+        const response = await fetch(statusUrl, { cache: "no-store" });
+        task = await readJson(response);
+
+        if (!response.ok) {
+          throw new Error(task.error || `Ошибка сервера (${response.status}).`);
+        }
+      } catch (error) {
+        if (generation === pollGeneration) {
+          showError(describeError(error));
+        }
+        return;
+      }
+
+      if (generation !== pollGeneration) {
+        return;
+      }
+
+      if (task.status === "completed") {
+        showResult(task);
+        return;
+      }
+
+      if (task.status === "failed") {
+        showError(task.message || task.error || "Обработка завершилась ошибкой.");
+        return;
+      }
+
+      updateStatus(task);
+      window.setTimeout(
+        () => pollTask(statusUrl, generation),
+        POLL_INTERVAL
+      );
+    }
+
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    dropZone.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.add("dragging");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.remove("dragging");
+      });
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      const files = event.dataTransfer && event.dataTransfer.files;
+      if (files && files.length) {
+        handleFile(files[0]);
+      }
+    });
+
+    fileInput.addEventListener("change", () => {
+      handleFile(fileInput.files && fileInput.files[0]);
+    });
+
+    uploadForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      if (!selectedFile) {
+        showUploadError("Сначала выберите MP3-файл.");
+        return;
+      }
+
+      clearUploadError();
+      pollGeneration += 1;
+      const generation = pollGeneration;
+
+      currentStageIndex = 0;
+      statusCard.hidden = false;
+      uploadCard.hidden = true;
+      result.hidden = true;
+      errorBox.hidden = true;
+      spinner.hidden = false;
+      statusTitle.textContent = "Отправляем файл";
+      statusMessage.textContent = "Передаём MP3 на сервер.";
+      updateSteps("processing");
+      startTimer();
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      let task;
+      try {
+        const response = await fetch("/api/transcribe", {
+          method: "POST",
+          body: formData
+        });
+        task = await readJson(response);
+
+        if (!response.ok) {
+          throw new Error(task.error || `Ошибка сервера (${response.status}).`);
+        }
+        if (!task.task_id || !task.status_url) {
+          throw new Error("Сервер не вернул идентификатор задачи.");
+        }
+      } catch (error) {
+        if (generation === pollGeneration) {
+          showError(describeError(error));
+        }
+        return;
+      }
+
+      if (generation !== pollGeneration) {
+        return;
+      }
+
+      updateStatus({
+        status: task.status,
+        stage: "queued",
+        message: task.message || "Файл принят.",
+        elapsed_seconds: 0
+      });
+
+      pollTask(task.status_url, generation);
+    });
+
+    document.getElementById("retryButton").addEventListener("click", resetInterface);
+    document.getElementById("resetButton").addEventListener("click", resetInterface);
+  </script>
+</body>
+</html>
